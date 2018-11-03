@@ -3,19 +3,18 @@ package com.android.test.pst59part1;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.widget.ImageView;
 
-public class TraitementActivity extends AppCompatActivity {
+public class TreatmentActivity extends AppCompatActivity {
 
     protected Uri imageUri;
-    protected ImageView imageView;
+    protected TreatableImageView treatableImageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_traitement);
+        setContentView(R.layout.activity_treatment);
         imageUri = getIntent().getParcelableExtra("uri");
-        imageView = findViewById(R.id.image);
-        imageView.setImageURI(imageUri);
+        treatableImageView = findViewById(R.id.image);
+        treatableImageView.setImageURI(imageUri);
     }
 }

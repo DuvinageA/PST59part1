@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
-            Intent intent = new Intent(this, TraitementActivity.class);
+            Intent intent = new Intent(this, TreatmentActivity.class);
             if (requestCode == 1) {
                 Uri selectedImage = data.getData();
                 imageUri = selectedImage;
