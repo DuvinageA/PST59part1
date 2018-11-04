@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
-                builder.setTitle("Choisissez une image");
+                builder.setTitle("Choisissez une imageRect");
                 builder.setAdapter(
                         new ListAdapter() {
                             @Override
@@ -178,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private File createImageFile() throws IOException {
-        // Create an image file name
+        // Create an imageRect file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
         File storageDir = this.getExternalFilesDir(Environment.DIRECTORY_PICTURES);

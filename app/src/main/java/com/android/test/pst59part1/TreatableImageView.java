@@ -5,29 +5,23 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
-public class TreatableImageView extends android.support.v7.widget.AppCompatImageView implements View.OnLongClickListener {
+public class TreatableImageView extends ZoomableImageView implements View.OnLongClickListener {
 
     Canvas canvas;
     Paint paint;
-    State state;
     Point[] points = new Point[2];
+    boolean hasMoved = false;
     int circleRadius = 20;
     int selectedCircle = -1;
     boolean isMoving = false;
     int xStart = 0;
     int yStart = 0;
-
-    enum State {
-        Waiting,
-        Drawing,
-        DrawingConfirmed,
-        Modifying
-    }
 
     public TreatableImageView(Context context) {
         super(context);
@@ -51,7 +45,7 @@ public class TreatableImageView extends android.support.v7.widget.AppCompatImage
 
     @Override
     public boolean onLongClick(View v) {
-        if (state == State.Waiting) {
+        if (state == State.Waiting && !hasMoved) {
             state = State.Drawing;
             points[1].x = points[0].x;
             points[1].y = points[0].y;
@@ -67,13 +61,17 @@ public class TreatableImageView extends android.support.v7.widget.AppCompatImage
         int x = (int) event.getX();
         int y = (int) event.getY();
         if (state == State.Waiting) {
-            switch (action) {
-                case MotionEvent.ACTION_DOWN:
-                    if (x > 0 && x < getWidth() && y > 0 && y < getHeight()) {
+            if (x > 0 && x < getWidth() && y > 0 && y < getHeight()) {
+                switch (action) {
+                    case MotionEvent.ACTION_DOWN:
+                        hasMoved = false;
                         points[0].x = x;
                         points[0].y = y;
-                    }
-                    break;
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        hasMoved = true;
+                        break;
+                }
             }
         } else if (state == State.Drawing || state == State.DrawingConfirmed) {
             switch (action) {
@@ -85,7 +83,6 @@ public class TreatableImageView extends android.support.v7.widget.AppCompatImage
                         invalidate();
                     }
                     break;
-
                 case MotionEvent.ACTION_UP:
                     if (state == State.DrawingConfirmed) {
                         state = state.Modifying;

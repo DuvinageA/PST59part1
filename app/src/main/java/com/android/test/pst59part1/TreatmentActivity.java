@@ -1,5 +1,6 @@
 package com.android.test.pst59part1;
 
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -7,7 +8,7 @@ import android.os.Bundle;
 public class TreatmentActivity extends AppCompatActivity {
 
     protected Uri imageUri;
-    protected TreatableImageView treatableImageView;
+    protected ZoomableImageView treatableImageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
