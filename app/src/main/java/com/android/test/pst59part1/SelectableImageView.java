@@ -7,12 +7,20 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class SelectableImageView extends android.support.v7.widget.AppCompatImageView implements View.OnLongClickListener {
 
@@ -151,6 +159,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
             case MotionEvent.ACTION_DOWN:
                 performClick();
                 if (state == State.WAITING && mode == Mode.DISPLAYING) {
+                    currentSelection = getNearestContainingSelection(event, tempSelections);
                     drawStart.set(event.getX(), event.getY());
                 } else if (mode == Mode.EDITING) {
                     editingModeInitializer(event, tempSelections);
@@ -177,6 +186,11 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
                 } else if (mode == Mode.EDITING) {
                     selectedCircle = -1;
                     inSelectionZone = false;
+                } else if (state == State.WAITING) {
+                    if (currentSelection != -1) {
+                        mode = Mode.EDITING;
+                        ((OnEditingModeListener)getContext()).notifyEditingModeChange(mode);
+                    }
                 }
                 break;
             case MotionEvent.ACTION_POINTER_UP:
@@ -241,6 +255,31 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         } else if (mode == Mode.EDITING) {
             editingSelection(canvas);
         }
+    }
+
+    private int getNearestContainingSelection(final MotionEvent event, List<RectF> tempSelections) {
+        final float x = event.getX();
+        final float y = event.getY();
+        Set<RectF> containingSelections = new TreeSet<>(new Comparator<RectF>() {
+            @Override
+            public int compare(RectF o1, RectF o2) {
+                float value1 = Math.min(x - o1.left, y - o1.top);
+                value1 = Math.min(o1.right - x, value1);
+                value1 = Math.min(o1.bottom - y, value1);
+                float value2 = Math.min(x - o2.left, y - o2.top);
+                value2 = Math.min(o2.right - x, value2);
+                value2 = Math.min(o2.bottom - y, value2);
+                return Float.compare(value1, value2);
+            }
+        });
+        for (RectF selection : tempSelections) {
+            if (selection.contains(event.getX(), event.getY()))
+                containingSelections.add(selection);
+        }
+        if (!containingSelections.isEmpty()) {
+            return tempSelections.indexOf(((TreeSet<RectF>) containingSelections).first());
+        }
+        return -1;
     }
 
     private void drawingModeTreatment(MotionEvent event) {
