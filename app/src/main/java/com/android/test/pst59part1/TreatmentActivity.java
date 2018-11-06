@@ -1,6 +1,5 @@
 package com.android.test.pst59part1;
 
-import android.net.Uri;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -8,7 +7,7 @@ import android.view.View;
 
 public class TreatmentActivity extends AppCompatActivity implements SelectableImageView.OnEditingModeListener {
 
-    protected Uri imageUri;
+    protected TreatedImage treatedImage;
     protected SelectableImageView treatableImageView;
     protected FloatingActionButton temporaryFab;
 
@@ -16,9 +15,10 @@ public class TreatmentActivity extends AppCompatActivity implements SelectableIm
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_treatment);
-        imageUri = getIntent().getParcelableExtra("uri");
+        treatedImage = getIntent().getParcelableExtra("image");
         treatableImageView = findViewById(R.id.image);
-        treatableImageView.setImageURI(imageUri);
+        treatableImageView.setImageURI(treatedImage.getImageUri());
+        treatableImageView.setTreatedImage(treatedImage);
         temporaryFab = findViewById(R.id.fab);
         temporaryFab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -28,6 +28,18 @@ public class TreatmentActivity extends AppCompatActivity implements SelectableIm
             }
         });
         temporaryFab.setVisibility(View.INVISIBLE);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable("image", treatedImage);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        treatedImage = savedInstanceState.getParcelable("image");
     }
 
     @Override

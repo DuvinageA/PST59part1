@@ -7,19 +7,14 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
-import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 public class SelectableImageView extends android.support.v7.widget.AppCompatImageView implements View.OnLongClickListener {
@@ -41,7 +36,6 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
     private PointF borderBottomRight;
     private PointF currentTopLeft;
     private PointF currentBottomRight;
-    private List<RectF> originalSelections;
     private List<RectF> adaptedSelections;
     private PointF drawStart;
     private int currentSelection;
@@ -55,6 +49,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
     private boolean isZoomingSelection;
     private float oldDistSelection;
     private PointF midSelection;
+    private TreatedImage treatedImage;
 
     enum Mode {
         DISPLAYING,
@@ -72,7 +67,6 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         super(context);
         state = State.WAITING;
         mode = Mode.DISPLAYING;
-        originalSelections = new ArrayList<>();
         adaptedSelections = new ArrayList<>();
         matrix = new Matrix();
         savedMatrix = new Matrix();
@@ -101,7 +95,6 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         super(context, attrs);
         state = State.WAITING;
         mode = Mode.DISPLAYING;
-        originalSelections = new ArrayList<>();
         adaptedSelections = new ArrayList<>();
         matrix = new Matrix();
         savedMatrix = new Matrix();
@@ -134,11 +127,11 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
     public boolean onLongClick(View v) {
         if (mode == Mode.DISPLAYING && state == State.WAITING && imageRect.contains(drawStart.x, drawStart.y)) {
             state = State.DRAWING;
-            currentSelection = originalSelections.size();
+            currentSelection = treatedImage.getDescription().keySet().size();
             RectF adaptedRect = new RectF(drawStart.x, drawStart.y, drawStart.x, drawStart.y);
             adaptedSelections.add(adaptedRect);
             RectF originalRect = new RectF(adaptedRect);
-            originalSelections.add(originalRect);
+            treatedImage.addSelection(originalRect);
             invalidate();
         }
         return false;
@@ -150,9 +143,9 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         RectF tempRect = new RectF(imageRect);
         imageRect = new RectF(originalRect);
         List<RectF> tempSelections = new ArrayList<>();
-        for (int i = 0; i < originalSelections.size(); i++) {
+        for (int i = 0; i < treatedImage.getDescription().keySet().size(); i++) {
             tempSelections.add(new RectF(adaptedSelections.get(0)));
-            adaptedSelections.add(new RectF(originalSelections.get(i)));
+            adaptedSelections.add(new RectF(treatedImage.getSelection(i)));
             adaptedSelections.remove(0);
         }
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
@@ -295,7 +288,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
             y = imageRect.bottom;
         }
         adaptedSelections.get(currentSelection).set(drawStart.x, drawStart.y, x, y);
-        RectF originalRect = originalSelections.get(currentSelection);
+        RectF originalRect = treatedImage.getSelection(currentSelection);
         originalRect.set(drawStart.x, drawStart.y, x, y);
         Matrix mat = new Matrix();
         float[] values = new float[9];
@@ -307,7 +300,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
 
     private void selectionZoom(MotionEvent event, RectF tempRect, List<RectF> tempSelections) {
         RectF rect = tempSelections.get(currentSelection);
-        RectF originalRect = originalSelections.get(currentSelection);
+        RectF originalRect = treatedImage.getSelection(currentSelection);
         originalRect.set(rect);
         float newDist = spacing(event);
         if (newDist > 10f) {
@@ -345,7 +338,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         } else if (rect.bottom + y - drawStart.y > tempRect.bottom) {
             y = tempRect.bottom - rect.bottom + drawStart.y;
         }
-        RectF originalRect = originalSelections.get(currentSelection);
+        RectF originalRect = treatedImage.getSelection(currentSelection);
         originalRect.set(rect.left + x - drawStart.x, rect.top + y - drawStart.y, rect.right + x - drawStart.x, rect.bottom + y - drawStart.y);
         Matrix mat = new Matrix();
         float[] values = new float[9];
@@ -378,7 +371,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         } else if (x > drawStart.x && y > drawStart.y) {
             selectedCircle = 3;
         }
-        RectF originalRect = originalSelections.get(currentSelection);
+        RectF originalRect = treatedImage.getSelection(currentSelection);
         originalRect.set(drawStart.x, drawStart.y, x, y);
         Matrix mat = new Matrix();
         float[] values = new float[9];
@@ -586,6 +579,18 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
 
     public void quitEditingMode() {
         mode = Mode.DISPLAYING;
+        invalidate();
+    }
+
+    public void setTreatedImage(TreatedImage treatedImage) {
+        this.treatedImage = treatedImage;
+        if (treatedImage.getDescription().keySet().size() != 0) {
+            for (RectF selection : treatedImage.getDescription().keySet()) {
+                RectF adaptedSelection = new RectF(selection);
+                matrix.mapRect(adaptedSelection);
+                adaptedSelections.add(adaptedSelection);
+            }
+        }
         invalidate();
     }
 }

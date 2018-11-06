@@ -3,6 +3,7 @@ package com.android.test.pst59part1;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.DataSetObserver;
+import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -23,10 +24,11 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private FloatingActionButton fab;
     private Uri imageUri;
 
     @Override
@@ -34,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -94,11 +96,11 @@ public class MainActivity extends AppCompatActivity {
                                 switch (position) {
                                     case 0:
                                         image.setImageDrawable(ContextCompat.getDrawable(parent.getContext(), android.R.drawable.ic_menu_camera));
-                                        text.setText("Appareil photo");
+                                        text.setText(R.string.image_camera_button);
                                         break;
                                     case 1:
                                         image.setImageDrawable(ContextCompat.getDrawable(parent.getContext(), android.R.drawable.ic_menu_gallery));
-                                        text.setText("Galerie");
+                                        text.setText(R.string.image_gallery_button);
                                         break;
                                 }
                                 return view;
@@ -142,10 +144,10 @@ public class MainActivity extends AppCompatActivity {
         if (resultCode == RESULT_OK) {
             Intent intent = new Intent(this, TreatmentActivity.class);
             if (requestCode == 1) {
-                Uri selectedImage = data.getData();
-                imageUri = selectedImage;
+                imageUri = data.getData();
             }
-            intent.putExtra("uri", imageUri);
+            TreatedImage treatedImage = new TreatedImage(imageUri, new HashMap<RectF, String>());
+            intent.putExtra("image", treatedImage);
             startActivity(intent);
         }
     }
@@ -158,16 +160,15 @@ public class MainActivity extends AppCompatActivity {
                     File photoFile = null;
                     try {
                         photoFile = createImageFile();
-                    } catch (IOException ex) { }
+                    } catch (IOException ex) {
+                        System.err.println(ex.getMessage());
+                    }
                     if (photoFile != null) {
-                        imageUri = FileProvider.getUriForFile(this,
-                                "com.android.test.fileprovider",
-                                photoFile);
+                        imageUri = FileProvider.getUriForFile(this,"com.android.test.fileprovider", photoFile);
                         takePicture.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
                         startActivityForResult(takePicture, 0);
                     }
                 }
-
                 break;
             case 1:
                 Intent pickPhoto = new Intent(Intent.ACTION_PICK,
@@ -178,15 +179,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private File createImageFile() throws IOException {
-        // Create an imageRect file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.FRANCE).format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
         File storageDir = this.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        File image = File.createTempFile(
-                imageFileName,  /* prefix */
-                ".jpg",         /* suffix */
-                storageDir      /* directory */
-        );
-        return image;
+        return File.createTempFile(imageFileName, ".jpg", storageDir);
     }
 }
