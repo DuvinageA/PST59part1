@@ -289,6 +289,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         }
         adaptedSelections.get(currentSelection).set(drawStart.x, drawStart.y, x, y);
         RectF originalRect = treatedImage.getSelection(currentSelection);
+        String value = treatedImage.removeSelectionFromMap(currentSelection);
         originalRect.set(drawStart.x, drawStart.y, x, y);
         Matrix mat = new Matrix();
         float[] values = new float[9];
@@ -296,11 +297,13 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         mat.postTranslate(-1 * values[Matrix.MTRANS_X], -1 * values[Matrix.MTRANS_Y]);
         mat.postScale(1 / values[Matrix.MSCALE_X], 1 / values[Matrix.MSCALE_Y]);
         mat.mapRect(originalRect);
+        treatedImage.resetSelectionInMap(currentSelection, value);
     }
 
     private void selectionZoom(MotionEvent event, RectF tempRect, List<RectF> tempSelections) {
         RectF rect = tempSelections.get(currentSelection);
         RectF originalRect = treatedImage.getSelection(currentSelection);
+        String value = treatedImage.removeSelectionFromMap(currentSelection);
         originalRect.set(rect);
         float newDist = spacing(event);
         if (newDist > 10f) {
@@ -321,6 +324,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         mat.postTranslate(-1 * values[Matrix.MTRANS_X], -1 * values[Matrix.MTRANS_Y]);
         mat.postScale(1 / values[Matrix.MSCALE_X], 1 / values[Matrix.MSCALE_Y]);
         mat.mapRect(originalRect);
+        treatedImage.resetSelectionInMap(currentSelection, value);
         adaptedSelections.get(currentSelection).set(originalRect);
     }
 
@@ -339,6 +343,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
             y = tempRect.bottom - rect.bottom + drawStart.y;
         }
         RectF originalRect = treatedImage.getSelection(currentSelection);
+        String value = treatedImage.removeSelectionFromMap(currentSelection);
         originalRect.set(rect.left + x - drawStart.x, rect.top + y - drawStart.y, rect.right + x - drawStart.x, rect.bottom + y - drawStart.y);
         Matrix mat = new Matrix();
         float[] values = new float[9];
@@ -346,6 +351,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         mat.postTranslate(-1 * values[Matrix.MTRANS_X], -1 * values[Matrix.MTRANS_Y]);
         mat.postScale(1 / values[Matrix.MSCALE_X], 1 / values[Matrix.MSCALE_Y]);
         mat.mapRect(originalRect);
+        treatedImage.resetSelectionInMap(currentSelection, value);
         adaptedSelections.get(currentSelection).set(originalRect);
         drawStart.set(x, y);
     }
@@ -372,6 +378,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
             selectedCircle = 3;
         }
         RectF originalRect = treatedImage.getSelection(currentSelection);
+        String value = treatedImage.removeSelectionFromMap(currentSelection);
         originalRect.set(drawStart.x, drawStart.y, x, y);
         Matrix mat = new Matrix();
         float[] values = new float[9];
@@ -379,6 +386,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         mat.postTranslate(-1 * values[Matrix.MTRANS_X], -1 * values[Matrix.MTRANS_Y]);
         mat.postScale(1 / values[Matrix.MSCALE_X], 1 / values[Matrix.MSCALE_Y]);
         mat.mapRect(originalRect);
+        treatedImage.resetSelectionInMap(currentSelection, value);
         adaptedSelections.get(currentSelection).set(originalRect);
     }
 
@@ -579,6 +587,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
 
     public void quitEditingMode() {
         mode = Mode.DISPLAYING;
+        ((OnEditingModeListener)getContext()).notifyEditingModeChange(mode);
         invalidate();
     }
 
@@ -592,5 +601,18 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
             }
         }
         invalidate();
+    }
+
+    public int getCurrentSelection() {
+        return currentSelection;
+    }
+
+    public void resetCurrentSelection() {
+        currentSelection = -1;
+    }
+
+    public void removeSelection(int position) {
+        treatedImage.removeSelection(position);
+        adaptedSelections.remove(position);
     }
 }

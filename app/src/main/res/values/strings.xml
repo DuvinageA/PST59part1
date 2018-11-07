@@ -2,4 +2,8 @@
     <string name="app_name">APP NAME</string>
     <string name="image_camera_button">Appareil photo</string>
     <string name="image_gallery_button">Galerie</string>
+    <string name="save_button">Enregistrer</string>
+    <string name="delete_button">Supprimer</string>
+    <string name="edit_description_button">Editer la description</string>
+    <string name="confirm_button">Valider</string>
 </resources>

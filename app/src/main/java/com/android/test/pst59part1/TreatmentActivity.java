@@ -2,8 +2,11 @@ package com.android.test.pst59part1;
 
 import android.content.Intent;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatDialogFragment;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -11,22 +14,23 @@ import android.view.View;
 public class TreatmentActivity extends AppCompatActivity implements SelectableImageView.OnEditingModeListener {
 
     protected TreatedImage treatedImage;
-    protected SelectableImageView treatableImageView;
+    protected SelectableImageView selectableImageView;
     protected FloatingActionButton temporaryFab;
+    protected Menu menu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_treatment);
         treatedImage = getIntent().getParcelableExtra("image");
-        treatableImageView = findViewById(R.id.image);
-        treatableImageView.setImageURI(treatedImage.getImageUri());
-        treatableImageView.setTreatedImage(treatedImage);
+        selectableImageView = findViewById(R.id.image);
+        selectableImageView.setImageURI(treatedImage.getImageUri());
+        selectableImageView.setTreatedImage(treatedImage);
         temporaryFab = findViewById(R.id.fab);
         temporaryFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                treatableImageView.quitEditingMode();
+                selectableImageView.quitEditingMode();
                 temporaryFab.setVisibility(View.INVISIBLE);
             }
         });
@@ -35,6 +39,7 @@ public class TreatmentActivity extends AppCompatActivity implements SelectableIm
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        this.menu = menu;
         getMenuInflater().inflate(R.menu.menu_treatment, menu);
         return true;
     }
@@ -47,6 +52,17 @@ public class TreatmentActivity extends AppCompatActivity implements SelectableIm
                 returnIntent.putExtra("image", treatedImage);
                 setResult(RESULT_OK, returnIntent);
                 finish();
+                return true;
+            case R.id.delete:
+                int current = selectableImageView.getCurrentSelection();
+                selectableImageView.removeSelection(current);
+                selectableImageView.resetCurrentSelection();
+                selectableImageView.quitEditingMode();
+                return true;
+            case R.id.edit:
+                FragmentManager fragmentManager = getSupportFragmentManager();
+                AppCompatDialogFragment fragment = new DescriptionDialogFragment();
+                fragment.show(fragmentManager, "text_edition");
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -68,8 +84,14 @@ public class TreatmentActivity extends AppCompatActivity implements SelectableIm
     public void notifyEditingModeChange(SelectableImageView.Mode mode) {
         if (mode == SelectableImageView.Mode.DISPLAYING) {
             temporaryFab.setVisibility(View.INVISIBLE);
+            menu.findItem(R.id.save).setVisible(true);
+            menu.findItem(R.id.delete).setVisible(false);
+            menu.findItem(R.id.edit).setVisible(false);
         } else if (mode == SelectableImageView.Mode.EDITING) {
             temporaryFab.setVisibility(View.VISIBLE);
+            menu.findItem(R.id.save).setVisible(false);
+            menu.findItem(R.id.delete).setVisible(true);
+            menu.findItem(R.id.edit).setVisible(true);
         }
     }
 }

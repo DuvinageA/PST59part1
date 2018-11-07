@@ -45,6 +45,24 @@ public class TreatedImage implements Parcelable {
         return selections.get(position);
     }
 
+    void removeSelection(int position) {
+        RectF selection = getSelection(position);
+        description.remove(selection);
+        selections.remove(position);
+    }
+
+    String removeSelectionFromMap(int position) {
+        RectF selection = selections.get(position);
+        String text = description.get(selection);
+        description.remove(selection);
+        return text;
+    }
+
+    void resetSelectionInMap(int position, String value) {
+        RectF selection = selections.get(position);
+        description.put(selection, value);
+    }
+
     void addSelection(RectF selection) {
         description.put(selection, null);
         selections.add(selection);
