@@ -7,6 +7,8 @@ import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
@@ -16,13 +18,17 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -30,12 +36,49 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
     private Uri imageUri;
+    private ArrayList<TreatedImage> treatedImages;
+    private MainActivity activity;
+    private int current;
+    private ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        activity = this;
+        if (treatedImages == null) {
+            treatedImages = new ArrayList<>();
+        }
         setContentView(R.layout.activity_main);
-
+        listView = findViewById(R.id.listView);
+        listView.setAdapter(new ArrayAdapter<TreatedImage>(this, R.id.textView, treatedImages) {
+            @NonNull
+            @Override
+            public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                View view = convertView;
+                if (view == null) {
+                    LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+                    view = inflater.inflate(R.layout.content_treated_images, parent, false);
+                }
+                ImageView imageView = view.findViewById(R.id.imageView);
+                TextView textView = view.findViewById(R.id.textView);
+                Uri uri = treatedImages.get(position).getImageUri();
+                imageView.setImageURI(uri);
+                System.out.println(uri.getPath());
+                String[] subs = uri.toString().split("/");
+                String name = subs[subs.length - 1];
+                textView.setText(name);
+                return view;
+            }
+        });
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(activity, TreatmentActivity.class);
+                intent.putExtra("image", treatedImages.get(position));
+                current = position;
+                activity.startActivityForResult(intent, 3);
+            }
+        });
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -142,14 +185,42 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
-            Intent intent = new Intent(this, TreatmentActivity.class);
-            if (requestCode == 1) {
-                imageUri = data.getData();
+            if (requestCode == 0 || requestCode == 1) {
+                Intent intent = new Intent(this, TreatmentActivity.class);
+                if (requestCode == 1) {
+                    imageUri = data.getData();
+                }
+                TreatedImage treatedImage = new TreatedImage(imageUri, new HashMap<RectF, String>());
+                intent.putExtra("image", treatedImage);
+                startActivityForResult(intent, 2);
+            } else if (requestCode == 2) {
+                TreatedImage newTreatedImage = data.getParcelableExtra("image");
+                if (newTreatedImage != null) {
+                    treatedImages.add(newTreatedImage);
+                }
+                ((ArrayAdapter)listView.getAdapter()).notifyDataSetChanged();
+            } else if (requestCode == 3) {
+                TreatedImage newTreatedImage = data.getParcelableExtra("image");
+                if (newTreatedImage != null) {
+                    treatedImages.set(current, newTreatedImage);
+                }
+                ((ArrayAdapter)listView.getAdapter()).notifyDataSetChanged();
             }
-            TreatedImage treatedImage = new TreatedImage(imageUri, new HashMap<RectF, String>());
-            intent.putExtra("image", treatedImage);
-            startActivity(intent);
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList("treatedImages", treatedImages);
+        outState.putInt("current", current);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        treatedImages = savedInstanceState.getParcelableArrayList("treatedImages");
+        current = savedInstanceState.getInt("current");
     }
 
     protected void sendRequest(int which) {

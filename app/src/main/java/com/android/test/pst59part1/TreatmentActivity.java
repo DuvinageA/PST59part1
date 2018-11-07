@@ -1,8 +1,11 @@
 package com.android.test.pst59part1;
 
+import android.content.Intent;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 
 public class TreatmentActivity extends AppCompatActivity implements SelectableImageView.OnEditingModeListener {
@@ -28,6 +31,25 @@ public class TreatmentActivity extends AppCompatActivity implements SelectableIm
             }
         });
         temporaryFab.setVisibility(View.INVISIBLE);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_treatment, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.save:
+                Intent returnIntent = new Intent();
+                returnIntent.putExtra("image", treatedImage);
+                setResult(RESULT_OK, returnIntent);
+                finish();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
