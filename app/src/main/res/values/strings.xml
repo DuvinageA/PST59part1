@@ -6,4 +6,5 @@
     <string name="delete_button">Supprimer</string>
     <string name="edit_description_button">Editer la description</string>
     <string name="confirm_button">Valider</string>
+    <string name="describe_selection_hint">Décrivez la sélection...</string>
 </resources>

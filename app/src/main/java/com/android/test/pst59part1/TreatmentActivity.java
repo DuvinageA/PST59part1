@@ -2,7 +2,6 @@ package com.android.test.pst59part1;
 
 import android.content.Intent;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -30,8 +29,14 @@ public class TreatmentActivity extends AppCompatActivity implements SelectableIm
         temporaryFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                selectableImageView.quitEditingMode();
-                temporaryFab.setVisibility(View.INVISIBLE);
+                if (treatedImage.getDescription().get(treatedImage.getSelection(selectableImageView.getCurrentSelection())) != null) {
+                    selectableImageView.quitEditingMode();
+                    temporaryFab.setVisibility(View.INVISIBLE);
+                } else {
+                    FragmentManager fragmentManager = getSupportFragmentManager();
+                    AppCompatDialogFragment fragment = new DescriptionDialogFragment();
+                    fragment.show(fragmentManager, "text_edition");
+                }
             }
         });
         temporaryFab.setVisibility(View.INVISIBLE);

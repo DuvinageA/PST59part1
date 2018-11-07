@@ -1,5 +1,6 @@
 package com.android.test.pst59part1;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -10,16 +11,14 @@ import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatDialogFragment;
-import android.text.Layout;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -27,13 +26,13 @@ import java.util.Objects;
 public class DescriptionDialogFragment extends AppCompatDialogFragment {
 
     private TreatedImage treatedImage;
-    private int currentSelection;
 
+    @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         TreatmentActivity activity = (TreatmentActivity)Objects.requireNonNull(getActivity());
         treatedImage = activity.treatedImage;
-        currentSelection = activity.selectableImageView.getCurrentSelection();
+        int currentSelection = activity.selectableImageView.getCurrentSelection();
         final RectF selection = treatedImage.getSelection(currentSelection);
         String text = treatedImage.getDescription().get(selection);
         Uri imageUri = treatedImage.getImageUri();
@@ -51,7 +50,7 @@ public class DescriptionDialogFragment extends AppCompatDialogFragment {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         LayoutInflater inflater = LayoutInflater.from(getActivity());
-        ConstraintLayout layout = (ConstraintLayout) inflater.inflate(R.layout.content_dialog_fragment, null);
+        @SuppressLint("InflateParams") ConstraintLayout layout = (ConstraintLayout) inflater.inflate(R.layout.content_dialog_fragment, null);
         ImageView imageView = layout.findViewById(R.id.imageView);
         final EditText editText = layout.findViewById(R.id.editText);
         FloatingActionButton floatingActionButton = layout.findViewById(R.id.floatingActionButton);
