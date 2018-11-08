@@ -119,8 +119,9 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         setOnLongClickListener(this);
     }
 
-    public interface OnEditingModeListener {
+    public interface SelectableImageViewListener {
         void notifyEditingModeChange(Mode mode);
+        void declareImageSize(int height, int width);
     }
 
     @Override
@@ -174,7 +175,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
                     state = State.WAITING;
                 } else if (state == State.DRAWING) {
                     mode = Mode.EDITING;
-                    ((OnEditingModeListener)getContext()).notifyEditingModeChange(mode);
+                    ((SelectableImageViewListener)getContext()).notifyEditingModeChange(mode);
                     state = State.WAITING;
                 } else if (mode == Mode.EDITING) {
                     selectedCircle = -1;
@@ -182,7 +183,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
                 } else if (state == State.WAITING) {
                     if (currentSelection != -1) {
                         mode = Mode.EDITING;
-                        ((OnEditingModeListener)getContext()).notifyEditingModeChange(mode);
+                        ((SelectableImageViewListener)getContext()).notifyEditingModeChange(mode);
                     }
                 }
                 break;
@@ -549,6 +550,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
     private void computeImageRect() {
         int imageHeight = getDrawable().getIntrinsicHeight();
         int imageWidth = getDrawable().getIntrinsicWidth();
+        ((SelectableImageViewListener)getContext()).declareImageSize(imageHeight, imageWidth);
         originalRect.set(0, 0, imageWidth, imageHeight);
         imageRect = new RectF(originalRect);
     }
@@ -577,6 +579,9 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         currentZoom = minZoom;
         setImageMatrix(matrix);
         matrix.mapRect(imageRect);
+        for (RectF rect : adaptedSelections) {
+            matrix.mapRect(rect);
+        }
         currentTopLeft.set(imageRect.left, imageRect.top);
         currentTopLeft.set(imageRect.right, imageRect.bottom);
     }
@@ -587,7 +592,7 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
 
     public void quitEditingMode() {
         mode = Mode.DISPLAYING;
-        ((OnEditingModeListener)getContext()).notifyEditingModeChange(mode);
+        ((SelectableImageViewListener)getContext()).notifyEditingModeChange(mode);
         invalidate();
     }
 
@@ -596,7 +601,6 @@ public class SelectableImageView extends android.support.v7.widget.AppCompatImag
         if (treatedImage.getDescription().keySet().size() != 0) {
             for (RectF selection : treatedImage.getDescription().keySet()) {
                 RectF adaptedSelection = new RectF(selection);
-                matrix.mapRect(adaptedSelection);
                 adaptedSelections.add(adaptedSelection);
             }
         }

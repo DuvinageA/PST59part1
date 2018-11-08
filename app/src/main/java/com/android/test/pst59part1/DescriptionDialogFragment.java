@@ -30,7 +30,7 @@ public class DescriptionDialogFragment extends AppCompatDialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        TreatmentActivity activity = (TreatmentActivity)Objects.requireNonNull(getActivity());
+        final TreatmentActivity activity = (TreatmentActivity)Objects.requireNonNull(getActivity());
         treatedImage = activity.treatedImage;
         int currentSelection = activity.selectableImageView.getCurrentSelection();
         final RectF selection = treatedImage.getSelection(currentSelection);
@@ -39,9 +39,11 @@ public class DescriptionDialogFragment extends AppCompatDialogFragment {
         Bitmap bitmap = null;
         try {
             bitmap = MediaStore.Images.Media.getBitmap(activity.getContentResolver(), imageUri);
-            Matrix matrix = new Matrix();
-            matrix.setRotate(-90f);
-            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            if (!(bitmap.getHeight() * activity.imageWidth == bitmap.getWidth() * activity.imageHeight)) {
+                Matrix matrix = new Matrix();
+                matrix.setRotate(-90f);
+                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            }
             bitmap = Bitmap.createBitmap(bitmap, (int)selection.left, (int)selection.top, (int)selection.width(), (int)selection.height());
         } catch (IOException e) {
             e.printStackTrace();
@@ -59,7 +61,9 @@ public class DescriptionDialogFragment extends AppCompatDialogFragment {
         builder.setPositiveButton("Valider", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                treatedImage.getDescription().replace(selection, editText.getText().toString());
+                String content = editText.getText().toString();
+                treatedImage.getDescription().replace(selection, content.isEmpty() ? null:content);
+                activity.temporaryFab.callOnClick();
             }
         });
         builder.setNegativeButton("Annuler", new DialogInterface.OnClickListener() {

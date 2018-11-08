@@ -26,8 +26,11 @@ public class TreatedImage implements Parcelable {
     private TreatedImage(Parcel in) {
         imageUri = in.readParcelable(Uri.class.getClassLoader());
         description = new HashMap<>();
-        for (int i = 0 ; i < in.readInt() ; i++) {
-            description.put((RectF) in.readParcelable(RectF.class.getClassLoader()), in.readString());
+        int size = in.readInt();
+        for (int i = 0 ; i < size ; i++) {
+            RectF rect = in.readParcelable(RectF.class.getClassLoader());
+            String value = in.readString();
+            description.put(rect, value);
         }
         selections = new ArrayList<>();
         selections.addAll(description.keySet());

@@ -10,12 +10,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-public class TreatmentActivity extends AppCompatActivity implements SelectableImageView.OnEditingModeListener {
+public class TreatmentActivity extends AppCompatActivity implements SelectableImageView.SelectableImageViewListener {
 
     protected TreatedImage treatedImage;
     protected SelectableImageView selectableImageView;
     protected FloatingActionButton temporaryFab;
     protected Menu menu;
+    protected int imageHeight;
+    protected int imageWidth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,5 +100,11 @@ public class TreatmentActivity extends AppCompatActivity implements SelectableIm
             menu.findItem(R.id.delete).setVisible(true);
             menu.findItem(R.id.edit).setVisible(true);
         }
+    }
+
+    @Override
+    public void declareImageSize(int height, int width) {
+        imageHeight = height;
+        imageWidth = width;
     }
 }
