@@ -15,12 +15,14 @@ public class TreatedImage implements Parcelable {
     private Uri imageUri;
     private Map<RectF, String> description;
     private List<RectF> selections;
+    private int id;
 
     TreatedImage(Uri imageUri, Map<RectF, String> description) {
         this.imageUri = imageUri;
         this.description = description;
         selections = new ArrayList<>();
         selections.addAll(description.keySet());
+        id = -1;
     }
 
     private TreatedImage(Parcel in) {
@@ -34,6 +36,7 @@ public class TreatedImage implements Parcelable {
         }
         selections = new ArrayList<>();
         selections.addAll(description.keySet());
+        id = in.readInt();
     }
 
     Uri getImageUri() {
@@ -71,6 +74,12 @@ public class TreatedImage implements Parcelable {
         selections.add(selection);
     }
 
+    void setId(int id) {
+        this.id = id;
+    }
+
+    int getId() { return id; }
+
     public static final Creator<TreatedImage> CREATOR = new Creator<TreatedImage>() {
         @Override
         public TreatedImage createFromParcel(Parcel in) {
@@ -96,5 +105,6 @@ public class TreatedImage implements Parcelable {
             dest.writeParcelable(entry.getKey(), flags);
             dest.writeString(entry.getValue());
         }
+        dest.writeInt(id);
     }
 }

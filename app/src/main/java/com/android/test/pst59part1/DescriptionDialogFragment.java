@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -54,12 +55,19 @@ public class DescriptionDialogFragment extends AppCompatDialogFragment implement
         Uri imageUri = treatedImage.getImageUri();
         Bitmap bitmap = null;
         try {
+            ExifInterface exif = new ExifInterface(activity.getContentResolver().openInputStream(imageUri));
+            int rotation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
             bitmap = MediaStore.Images.Media.getBitmap(activity.getContentResolver(), imageUri);
-            if (!(bitmap.getHeight() * activity.imageWidth == bitmap.getWidth() * activity.imageHeight)) {
-                Matrix matrix = new Matrix();
-                matrix.setRotate(-90f);
-                bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            System.out.println(bitmap.getHeight() + "x" + bitmap.getWidth());
+            Matrix matrix = new Matrix();
+            if (rotation == ExifInterface.ORIENTATION_ROTATE_90) {
+                matrix.setRotate(90f);
+            } else if (rotation == ExifInterface.ORIENTATION_ROTATE_180) {
+                matrix.setRotate(180f);
+            } else if (rotation == ExifInterface.ORIENTATION_ROTATE_270) {
+                matrix.setRotate(270f);
             }
+            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
             bitmap = Bitmap.createBitmap(bitmap, (int)selection.left, (int)selection.top, (int)selection.width(), (int)selection.height());
         } catch (IOException e) {
             e.printStackTrace();

@@ -1,10 +1,12 @@
 package com.android.test.pst59part1;
 
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.DataSetObserver;
 import android.graphics.RectF;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -12,6 +14,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -24,33 +27,53 @@ import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.v2.DbxClientV2;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
+
+    final static private String ACCESS_TOKEN = "K4DN47ESdsAAAAAAAAAB6MtUjfCbTVcNRBLalSWyoKcX9HVUgUx04lWcOjOt7Bob";
+    private static final String IP_ADDRESS = "192.168.1.13";
 
     private Uri imageUri;
     private ArrayList<TreatedImage> treatedImages;
     private MainActivity activity;
-    private int current;
-    private ListView listView;
+    private DbxClientV2 client;
+    private ArrayAdapter<TreatedImage> adapter;
+
+    private ProgressDialog mDialog;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        DbxRequestConfig config = DbxRequestConfig.newBuilder("dropbox/java-tutorial").build();
+        client = new DbxClientV2(config, ACCESS_TOKEN);
+
+        treatedImages = new ArrayList<>();
+
         activity = this;
-        if (treatedImages == null) {
-            treatedImages = new ArrayList<>();
-        }
         setContentView(R.layout.activity_main);
-        listView = findViewById(R.id.listView);
-        listView.setAdapter(new ArrayAdapter<TreatedImage>(this, R.id.textView, treatedImages) {
+        ListView listView = findViewById(R.id.listView);
+        adapter = new ArrayAdapter<TreatedImage>(this, R.id.textView, treatedImages) {
             @NonNull
             @Override
             public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
@@ -63,19 +86,18 @@ public class MainActivity extends AppCompatActivity {
                 TextView textView = view.findViewById(R.id.textView);
                 Uri uri = treatedImages.get(position).getImageUri();
                 imageView.setImageURI(uri);
-                System.out.println(uri.getPath());
                 String[] subs = uri.toString().split("/");
                 String name = subs[subs.length - 1];
                 textView.setText(name);
                 return view;
             }
-        });
+        };
+        listView.setAdapter(adapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(activity, TreatmentActivity.class);
                 intent.putExtra("image", treatedImages.get(position));
-                current = position;
                 activity.startActivityForResult(intent, 3);
             }
         });
@@ -179,6 +201,23 @@ public class MainActivity extends AppCompatActivity {
                 builder.create().show();
             }
         });
+        swipeRefreshLayout = findViewById(R.id.swiperefresh);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                GetTask gt = new GetTask();
+                gt.execute();
+
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        GetTask gt = new GetTask();
+        gt.execute();
     }
 
     @Override
@@ -193,35 +232,23 @@ public class MainActivity extends AppCompatActivity {
                 TreatedImage treatedImage = new TreatedImage(imageUri, new HashMap<RectF, String>());
                 intent.putExtra("image", treatedImage);
                 startActivityForResult(intent, 2);
-            } else if (requestCode == 2) {
-                TreatedImage newTreatedImage = data.getParcelableExtra("image");
-                if (newTreatedImage != null) {
-                    treatedImages.add(newTreatedImage);
-                }
-                ((ArrayAdapter)listView.getAdapter()).notifyDataSetChanged();
-            } else if (requestCode == 3) {
-                TreatedImage newTreatedImage = data.getParcelableExtra("image");
-                if (newTreatedImage != null) {
-                    treatedImages.set(current, newTreatedImage);
-                }
-                ((ArrayAdapter)listView.getAdapter()).notifyDataSetChanged();
             }
         }
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putParcelableArrayList("treatedImages", treatedImages);
-        outState.putInt("current", current);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        treatedImages = savedInstanceState.getParcelableArrayList("treatedImages");
-        current = savedInstanceState.getInt("current");
-    }
+//    @Override
+//    protected void onSaveInstanceState(Bundle outState) {
+//        super.onSaveInstanceState(outState);
+//        outState.putParcelableArrayList("treatedImages", treatedImages);
+//        outState.putInt("current", current);
+//    }
+//
+//    @Override
+//    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+//        super.onRestoreInstanceState(savedInstanceState);
+//        treatedImages = savedInstanceState.getParcelableArrayList("treatedImages");
+//        current = savedInstanceState.getInt("current");
+//    }
 
     protected void sendRequest(int which) {
         switch (which) {
@@ -242,7 +269,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             case 1:
-                Intent pickPhoto = new Intent(Intent.ACTION_PICK,
+                Intent pickPhoto = new Intent(Intent.ACTION_OPEN_DOCUMENT,
                         android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
                 startActivityForResult(pickPhoto, 1);
                 break;
@@ -254,5 +281,90 @@ public class MainActivity extends AppCompatActivity {
         String imageFileName = "JPEG_" + timeStamp + "_";
         File storageDir = this.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         return File.createTempFile(imageFileName, ".jpg", storageDir);
+    }
+
+    class GetTask extends AsyncTask<Void, String, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            treatedImages.clear();
+            mDialog = new ProgressDialog(MainActivity.this);
+            mDialog.setMessage("Getting informations from Django...");
+            mDialog.setCancelable(false);
+            mDialog.show();
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            super.onProgressUpdate(values);
+            mDialog.cancel();
+            mDialog = new ProgressDialog(MainActivity.this);
+            mDialog.setMessage("Downloading file " + values[0] + "...");
+            mDialog.setCancelable(false);
+            mDialog.show();
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            mDialog.cancel();
+            adapter.notifyDataSetChanged();
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            try {
+                URL url = new URL("http://" + IP_ADDRESS + ":8000/treated_image/");
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                con.setRequestProperty("Accept", "application/json");
+                con.setRequestMethod("GET");
+                BufferedReader br = new BufferedReader(new InputStreamReader((con.getInputStream())));
+                StringBuilder sb = new StringBuilder();
+                String output;
+                while ((output = br.readLine()) != null) {
+                    sb.append(output);
+                }
+                String result = sb.toString();
+                int response = con.getResponseCode();
+                if (response == 200) {
+                    JSONObject jsonObject = new JSONObject(result);
+                    JSONArray results = (JSONArray)jsonObject.get("results");
+                    for (int i = 0 ; i < results.length() ; i++) {
+                        JSONObject image = (JSONObject)results.get(i);
+                        String filePath = (String)image.get("path");
+                        String id_url = (String)image.get("url");
+                        int id = id_url.charAt(id_url.length() - 2) - '0';
+                        publishProgress(filePath);
+                        JSONArray rects = (JSONArray)image.get("rects");
+                        Map<RectF, String> descriptions = new HashMap<>();
+                        for (int j = 0 ; j < rects.length() ; j++) {
+                            JSONObject rect = (JSONObject)rects.get(j);
+                            RectF rectF = new RectF();
+                            rectF.top = ((Double)rect.get("top")).floatValue();
+                            rectF.left = ((Double)rect.get("left")).floatValue();
+                            rectF.bottom = ((Double)rect.get("bottom")).floatValue();
+                            rectF.right = ((Double)rect.get("right")).floatValue();
+                            String desc = (String)rect.get("description");
+                            descriptions.put(rectF, desc);
+                        }
+                        File file = new File(MainActivity.this.getExternalFilesDir(Environment.DIRECTORY_PICTURES), filePath.substring(1));
+                        System.out.println(file.getAbsolutePath());
+                        if (!file.exists()) {
+                            FileOutputStream fos = new FileOutputStream(file);
+                            client.files().downloadBuilder(filePath).download(fos);
+                        }
+                        Uri uri = FileProvider.getUriForFile(MainActivity.this,"com.android.test.fileprovider", file);
+                        TreatedImage treatedImage = new TreatedImage(uri, descriptions);
+                        treatedImage.setId(id);
+                        treatedImages.add(treatedImage);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
     }
 }
