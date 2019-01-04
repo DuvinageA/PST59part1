@@ -25,7 +25,7 @@ L'activité de traitement est alors lancée, affichant l'image. Celle-ci peut ê
 
 Une fois l'édition terminer, l'envoi se fait via la sélection du bouton "Envoyer" dans la barre d'action, en haut de l'écran. Un chargement a alors lieu le temps d'envoyer l'image sur le Dropbox et les informations vers le service REST. Une fois le chargement terminé, un retour vers l'activité principale a lieu et la nouvelle image s'affiche, elle peut ainsi être à nouveau éditée en cliquant dessus.
 
-### Liens utiles
+## Liens utiles
 
 https://www.dropbox.com/developers-v1/core/start/android
 
